@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>URL Shortener</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 40px;
+      width: 100%;
+      max-width: 560px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+
+    h1 { font-size: 24px; margin-bottom: 8px; }
+    p.subtitle { color: #666; margin-bottom: 32px; font-size: 15px; }
+
+    label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+
+    input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+      margin-bottom: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus { border-color: #555; }
+
+    button {
+      width: 100%;
+      padding: 11px;
+      background: #111;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover { background: #333; }
+    button:disabled { background: #999; cursor: not-allowed; }
+
+    .result, .error {
+      margin-top: 24px;
+      padding: 16px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .result { background: #f0faf4; border: 1px solid #b6e8c8; }
+    .error  { background: #fff0f0; border: 1px solid #fbb; }
+
+    .result-label { font-size: 13px; color: #555; margin-bottom: 6px; }
+
+    .result-url {
+      font-size: 15px;
+      font-weight: 500;
+      word-break: break-all;
+      margin-bottom: 12px;
+    }
+
+    .copy-btn {
+      width: auto;
+      padding: 6px 16px;
+      font-size: 13px;
+      background: #111;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 32px 0;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .stats-row input { margin-bottom: 0; flex: 1; }
+    .stats-row button { width: auto; padding: 10px 20px; }
+
+    .stats-result {
+      margin-top: 16px;
+      padding: 16px;
+      background: #f7f7f7;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .stats-result div { margin-bottom: 6px; }
+    .stats-result span { font-weight: 500; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>URL Shortener</h1>
+    <p class="subtitle">Paste a long URL and get a short one.</p>
+
+    <label for="url-input">Long URL</label>
+    <input id="url-input" type="url" placeholder="https://example.com/very/long/url">
+
+    <label for="alias-input">Custom alias <span style="color:#999;font-weight:400">(optional)</span></label>
+    <input id="alias-input" type="text" placeholder="e.g. mylink">
+
+    <button id="shorten-btn" onclick="shortenUrl()">Shorten</button>
+
+    <div class="result" id="result">
+      <div class="result-label">Your short URL</div>
+      <div class="result-url" id="result-url"></div>
+      <button class="copy-btn" onclick="copyUrl()">Copy</button>
+    </div>
+
+    <div class="error" id="shorten-error"></div>
+
+    <hr class="divider">
+
+    <label>Check stats</label>
+    <div class="stats-row">
+      <input id="stats-input" type="text" placeholder="Enter code e.g. lEUrre">
+      <button onclick="getStats()">Lookup</button>
+    </div>
+
+    <div class="stats-result" id="stats-result"></div>
+  </div>
+
+  <script>
+    const API = "https://rnjdbcd7hd.execute-api.ap-southeast-2.amazonaws.com";
+
+    async function shortenUrl() {
+      const url = document.getElementById("url-input").value.trim();
+      const alias = document.getElementById("alias-input").value.trim();
+      const btn = document.getElementById("shorten-btn");
+      const resultEl = document.getElementById("result");
+      const errorEl = document.getElementById("shorten-error");
+
+      resultEl.style.display = "none";
+      errorEl.style.display = "none";
+
+      if (!url) {
+        showError(errorEl, "Please enter a URL.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Shortening...";
+
+      try {
+        const body = { url };
+        if (alias) body.alias = alias;
+
+        const res = await fetch(`${API}/shorten`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError(errorEl, data.error || "Something went wrong.");
+          return;
+        }
+
+        document.getElementById("result-url").textContent = data.shortUrl;
+        resultEl.style.display = "block";
+
+      } catch (err) {
+        showError(errorEl, "Network error. Please try again.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Shorten";
+      }
+    }
+
+    async function getStats() {
+      const code = document.getElementById("stats-input").value.trim();
+      const statsEl = document.getElementById("stats-result");
+
+      if (!code) return;
+
+      statsEl.style.display = "none";
+
+      try {
+        const res = await fetch(`${API}/${code}/stats`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          statsEl.innerHTML = `<div style="color:#c00">${data.error || "Not found."}</div>`;
+          statsEl.style.display = "block";
+          return;
+        }
+
+        statsEl.innerHTML = `
+          <div>Original URL: <span>${data.originalUrl}</span></div>
+          <div>Clicks: <span>${data.clicks}</span></div>
+          <div>Created: <span>${new Date(data.createdAt).toLocaleDateString()}</span></div>
+        `;
+        statsEl.style.display = "block";
+
+      } catch (err) {
+        statsEl.innerHTML = `<div style="color:#c00">Network error.</div>`;
+        statsEl.style.display = "block";
+      }
+    }
+
+    function copyUrl() {
+      const url = document.getElementById("result-url").textContent;
+      navigator.clipboard.writeText(url);
+    }
+
+    function showError(el, msg) {
+      el.textContent = msg;
+      el.style.display = "block";
+    }
+  </script>
+</body>
+</html>
