@@ -38,13 +38,13 @@ https://staging.d3w1w0m6iehn9k.amplifyapp.com/
 
 ## Design Decisions
 
-- DynamoDB over RDS - short codes map directly to long URLs, making a key-value store a natural fit. DynamoDB's partition key design mirrors this structure exactly, and its atomic operation support is essential for safe concurrent writes
-- Conditional writes for duplicate prevention - rather than reading a short code, checking for duplicates in Python, and then writing, DynamoDB's conditional write performs this as a single atomic operation. This closes the gap where two simultaneous requests could generate the same code and overwrite each other silently
-- 302 over 301 redirects - a 301 is cached permanently by the browser, meaning clicks would bypass Lambda entirely, breaking analytics and expiry enforcement. A 302 ensures every click flows through the redirect function
-- Manual TTL expiry check in Lambda - DynamoDB's built-in TTL can lag up to 48 hours before physically deleting expired items. Without a manual timestamp check in Lambda, expired links could still redirect successfully during that window
-- CloudFront for edge delivery - for a URL shortener, redirect speed matters. CloudFront handles requests at the nearest edge location globally, reducing latency and providing DDoS protection and HTTPS termination without additional configuration
-- Optional custom alias - users can define their own 6-character slug. If the alias already exists in DynamoDB, they are prompted to choose another. If left blank, a random code is generated automatically
-- API Gateway throttling - burst rate limits are applied at the API layer to prevent abuse and protect DynamoDB from request floods
+- DynamoDB over RDS - short codes map to long URLs naturally as key-value pairs; DynamoDB's partition key design and atomic operations are a direct fit
+- Conditional writes - duplicate prevention happens atomically in DynamoDB rather than in a read-check-write cycle, closing the race condition window
+- 302 over 301 - 301s are permanently cached by browsers, bypassing Lambda on repeat visits and breaking analytics and expiry enforcement
+- Manual TTL check in Lambda - DynamoDB's built-in TTL can lag up to 48 hours; a timestamp check in Lambda ensures expired links never redirect
+- CloudFront - edge delivery reduces redirect latency globally and provides DDoS protection and HTTPS termination out of the box
+- Optional custom alias - users can supply a 6-character slug; if taken, they're prompted to retry; otherwise a random code is generated
+- API Gateway throttling - burst rate limits at the API layer prevent abuse and protect DynamoDB from request floods
 
 ## Key Learnings
 
