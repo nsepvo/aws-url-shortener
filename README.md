@@ -4,7 +4,7 @@ A fully serverless URL shortener built on AWS, designed to convert long URLs int
 
 ## Live Demo
 
-https://staging.d3w1w0m6iehn9k.amplifyapp.com/
+https://d3hohcnfpufdrr.cloudfront.net/
 
 ## Architecture
 
