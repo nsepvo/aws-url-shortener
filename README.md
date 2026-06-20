@@ -49,7 +49,7 @@ https://d3hohcnfpufdrr.cloudfront.net/
 
 - DynamoDB atomic operations close race condition gaps - early on, the assumption was that Lambda would read an item, process it, and write back. Understanding that DynamoDB can perform conditional reads and writes as a single indivisible operation was a significant shift. It moves the integrity check into the database layer where it belongs
 - DynamoDB TTL is not instant - TTL marks items for deletion when their timestamp passes, but physical removal can lag by up to 48 hours. A manual expiry check in the redirect Lambda is necessary to prevent expired links from remaining active during that window
-- Environment variables must be exact across every function - with three separate Lambda functions sharing configuration like table names and region, a single typo in an environment variable causes silent failures that are harder to trace than code errors. Consistent naming conventions matter more than expected
+- Environment variables must be exact across every function - with three separate Lambda functions sharing configuration, a single typo in an environment variable causes silent failures that are harder to trace than code errors. Consistent naming conventions matter more than expected
 - Reading DynamoDB output correctly takes adjustment - early errors came from misreading the structure of DynamoDB responses rather than misconfiguring the table. Once the response format was understood, parsing became straightforward and predictable
 
 ## What I Would Do Next
@@ -59,7 +59,6 @@ https://d3hohcnfpufdrr.cloudfront.net/
 - QR code generation - automatically generate a scannable QR code for every short URL, since short links and QR codes serve the same use case
 - URL validation and blocklisting - ensure URLs are valid and reject known malicious or inappropriate domains before storing them
 - Enhanced rate limiting - supplement API Gateway throttling with per-IP controls to prevent a single user from flooding the table with short codes
-- Custom domain - replace the CloudFront-generated domain with a short custom domain to make the shortened URLs genuinely compact
 
 
 ## Contact
