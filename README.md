@@ -12,12 +12,11 @@ https://d3hohcnfpufdrr.cloudfront.net/
 
 ## AWS Services Used
 
-- AWS Amplify – Frontend hosting with automatic CI/CD on push
 - Amazon CloudFront – Global edge delivery and HTTPS termination
 - Amazon API Gateway – Public-facing REST API with throttling and burst rate limits
 - AWS Lambda – Backend logic across three functions (Python)
 - Amazon DynamoDB – Short code and URL storage
-- Amazon S3 – Static asset storage
+- Amazon S3 - Static frontend hosting and asset delivery
 
 ## Request Flow 
 ### Creating a Short URL
